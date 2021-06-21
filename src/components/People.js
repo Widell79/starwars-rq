@@ -1,15 +1,18 @@
-import React from "react";
+import React, { useState } from "react";
 import { useQuery } from "react-query";
 
 import Person from "./Person";
 
-const fetchPeople = async () => {
-  const res = await fetch("http://swapi.dev/api/people/");
+const fetchPeople = async (page) => {
+  const res = await fetch(`http://swapi.dev/api/people/?page=${page}`);
   return res.json();
 };
 
 const People = () => {
-  const { data, status } = useQuery("people", fetchPeople);
+  const [page, setPage] = useState(1);
+  const { data, status } = useQuery(["people", page], () => fetchPeople(page), {
+    keepPreviousData: true,
+  });
   return (
     <div>
       <h2>People</h2>
@@ -19,11 +22,26 @@ const People = () => {
       {status === "error" && <div>Error fetching data</div>}
 
       {status === "success" && (
-        <div>
-          {data.results.map((person) => (
-            <Person key={person.name} person={person} />
-          ))}
-        </div>
+        <>
+          <button
+            onClick={() => setPage((old) => Math.max(old - 1, 1))}
+            disabled={page === 1}
+          >
+            Previous page
+          </button>
+          <span>{page}</span>
+          <button
+            onClick={() => setPage(page + 1)}
+            disabled={data.next === null}
+          >
+            Next page
+          </button>
+          <div>
+            {data.results.map((person) => (
+              <Person key={person.name} person={person} />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
